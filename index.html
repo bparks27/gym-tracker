@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Gym Tracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Gym Tracker" />
+  <meta name="theme-color" content="#111111" />
+  <link rel="apple-touch-icon" href="https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Ffavi.deno.dev%2F&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114113109%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=e2o1dtq3ZJGzixawTkYaw1DWlZP1VdkhbcxYL6eS1RU%3D&reserved=0💪.png" />
+  <link href="https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Ffonts.googleapis.com%2Fcss2%3Ffamily%3DDM%2BMono%3Awght%40400%3B500%26family%3DBebas%2BNeue%26display%3Dswap&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114144693%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=JfvhUJ%2FFS15dPecm9t72KP5H94UGHFe1Dp1Cn6t95QA%3D&reserved=0" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #f5f5f0; }
+    body { font-family: 'DM Mono', monospace; -webkit-tap-highlight-color: transparent; }
+    input, textarea { outline: none; -webkit-appearance: none; border-radius: 5px; font-family: 'DM Mono', monospace; }
+    button { cursor: pointer; font-family: 'DM Mono', monospace; }
+    .repbox { width: 36px; height: 36px; font-size: 14px; text-align: center; border: 1.5px solid #e0e0d8; background: #fafaf8; color: #111; transition: border-color .1s, background .1s; border-radius: 5px; }
+    .repbox:focus { border-color: #555 !important; background: #fff !important; }
+    .repbox.improved { border-color: #22c55e !important; background: #f0fdf4 !important; color: #16a34a; }
+    .repbox.dropped  { border-color: #f87171 !important; background: #fef2f2 !important; color: #dc2626; }
+    .repbox.filled   { border-color: #bbb; }
+    .wrow { transition: background .2s; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Freact%2F18.2.0%2Fumd%2Freact.production.min.js&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114160799%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=sEOSKFt7aTa2cpCLsqnQWvAS18Sem9uLi%2Bw16yC5gBQ%3D&reserved=0"></script>
+<script src="https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Freact-dom%2F18.2.0%2Fumd%2Freact-dom.production.min.js&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114176573%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=O4ZPFtFUD18ReLa%2BWFZiQpJk%2Bv1mlDzNCvkWbpQrB4E%3D&reserved=0"></script>
+<script>
+const { useState, useRef, useCallback, useEffect } = React; const NUM_SETS = 6;
+
+// ALL exercises are shared — keyed by id // Days just reference them by id const INIT_SHARED = {
+  faceAwayCableCurl: {
+    id: "faceAwayCableCurl", name: "Face Away Cable Curl",
+    notes: "Cable, step forward, chest up, elbows locked back, slow eccentric",
+    video: "https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fyoutube.com%2Fshorts%2FayaK3qYn9ZQ%3Fsi%3DUBl91j40HsngYjeW&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114194715%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=XzO6dCqfzO%2Fs2Y9Ur6WT9xXn8zQkKWGsrcCx5fSbqoI%3D&reserved=0",
+    sets: [{ weight: "12kg" }, { weight: "10kg" }],
+  },
+  bicepCurlMachine: {
+    id: "bicepCurlMachine", name: "Bicep Curl Machine",
+    notes: "", video: "",
+    sets: [{ weight: "36kg" }],
+  },
+  chestFly: {
+    id: "chestFly", name: "Chest Fly Machine",
+    notes: "Control the eccentric, squeeze at peak, don't let shoulders take over",
+    video: "",
+    sets: [{ weight: "73kg" }],
+  },
+  tricepMiniBar: {
+    id: "tricepMiniBar", name: "Tricep Cable Mini Bar Pushdown",
+    notes: "Elbows fixed, full lockout, slow eccentric",
+    video: "",
+    sets: [{ weight: "35.2kg" }],
+  },
+  standingOHPress: {
+    id: "standingOHPress", name: "Standing Barbell OH Press",
+    notes: "Shoulders depressed, grip shoulder width, bar close to face, core tight",
+    video: "",
+    sets: [{ weight: "25kg" }, { weight: "20kg" }],
+  },
+  tBarRow: {
+    id: "tBarRow", name: "T-Bar Row (Narrow)",
+    notes: "Chest on pad, pull with elbows, squeeze, control eccentric, stretch at bottom",
+    video: "",
+    sets: [{ weight: "45kg" }, { weight: "40kg" }],
+  },
+  smithOHPress: {
+    id: "smithOHPress", name: "Smith OH Press",
+    notes: "Hands shoulder width, controlled, stable",
+    video: "",
+    sets: [{ weight: "40kg" }, { weight: "30kg" }],
+  },
+};
+
+const INIT_DAYS = [
+  {
+    id: 1, label: "DAY 1", color: "#e8f4fd", accent: "#1a6fc4",
+    exerciseIds: ["faceAwayCableCurl", "bicepCurlMachine", "chestFly", "tricepMiniBar"],
+  },
+  {
+    id: 2, label: "DAY 2", color: "#fdf3e8", accent: "#c47a1a",
+    exerciseIds: ["standingOHPress", "faceAwayCableCurl", "bicepCurlMachine", "tricepMiniBar", "tBarRow"],
+  },
+  {
+    id: 3, label: "DAY 3", color: "#edf8ed", accent: "#1a8c1a",
+    exerciseIds: ["smithOHPress", "chestFly", "tricepMiniBar"],
+  },
+];
+
+const deepClone = (o) => JSON.parse(JSON.stringify(o)); const LS = {
+  get: (k, fb) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch { return fb; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }, };
+
+const buildInputIds = (exerciseIds, shared, dayId) => {
+  const ids = [];
+  exerciseIds.forEach((exId) => {
+    const ex = shared[exId]; if (!ex) return;
+    (ex.sets || []).forEach((s) => {
+      for (let i = 0; i < NUM_SETS; i++) ids.push(`${dayId}__${exId}__${s.weight}__${i}`);
+    });
+  });
+  return ids;
+};
+
+function GymTracker() {
+  const [activeDay, setActiveDay]   = useState(() => LS.get("gt2_activeDay", 1));
+  const [days, setDays]             = useState(() => LS.get("gt2_days", deepClone(INIT_DAYS)));
+  const [shared, setShared]         = useState(() => LS.get("gt2_shared", deepClone(INIT_SHARED)));
+  const [reps, setReps]             = useState(() => LS.get("gt2_reps", {}));
+  const [history, setHistory]       = useState(() => LS.get("gt2_history", {}));
+  const [completedWeights, setCompletedWeights] = useState(() => LS.get("gt2_completed", {}));
+  const [editMode, setEditMode]     = useState(false);
+  const [expandedNotes, setExpandedNotes]       = useState({});
+  const [editingEx, setEditingEx]   = useState(null); // exId being edited in detail
+  const [saved, setSaved]           = useState(false);
+  const [newWeightInputs, setNewWeightInputs]   = useState({});
+  const [newExForm, setNewExForm]   = useState({ name: "", weight: "", notes: "", video: "" });
+  const [showAddEx, setShowAddEx]   = useState(false);
+  const inputRefs = useRef({});
+  const advTimers = useRef({});
+
+  useEffect(() => { LS.set("gt2_activeDay", activeDay); }, [activeDay]);
+  useEffect(() => { LS.set("gt2_days", days); }, [days]);
+  useEffect(() => { LS.set("gt2_shared", shared); }, [shared]);
+  useEffect(() => { LS.set("gt2_reps", reps); }, [reps]);
+  useEffect(() => { LS.set("gt2_history", history); }, [history]);
+  useEffect(() => { LS.set("gt2_completed", completedWeights); }, [completedWeights]);
+
+  const day = days.find((d) => d.id === activeDay);
+  const allInputIds = buildInputIds(day.exerciseIds, shared, activeDay);
+  const getRep = (dayId, exId, weight, i) => reps[`${dayId}__${exId}__${weight}__${i}`] || "";
+
+  const handleChange = (id, value, nextId) => {
+    const clean = value.replace(/\D/g, "").slice(0, 2);
+    setReps((prev) => ({ ...prev, [id]: clean }));
+    setSaved(false);
+    if (advTimers.current[id]) { clearTimeout(advTimers.current[id]); delete advTimers.current[id]; }
+    if (clean.length === 1 && nextId) {
+      advTimers.current[id] = setTimeout(() => { inputRefs.current[nextId]?.focus(); delete advTimers.current[id]; }, 600);
+    }
+    if (clean.length === 2 && nextId) setTimeout(() => inputRefs.current[nextId]?.focus(), 30);
+  };
+
+  const handleKeyDown = (e, id) => {
+    if (e.key === "Backspace" && !reps[id]) { const idx = allInputIds.indexOf(id); if (idx > 0) inputRefs.current[allInputIds[idx-1]]?.focus(); }
+    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); const idx = allInputIds.indexOf(id); if (idx < allInputIds.length-1) inputRefs.current[allInputIds[idx+1]]?.focus(); }
+  };
+
+  const toggleWeight = (key) => setCompletedWeights((p) => ({ ...p, [key]: !p[key] }));
+  const toggleNotes  = (id)  => setExpandedNotes((p) => ({ ...p, [id]: !p[id] }));
+
+  const saveSession = () => {
+    const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    const updates = {};
+    day.exerciseIds.forEach((exId) => {
+      const ex = shared[exId]; if (!ex) return;
+      const weightData = {}; let hasAny = false;
+      (ex.sets || []).forEach((s) => {
+        const vals = Array.from({ length: NUM_SETS }, (_, i) => { const v = getRep(activeDay, exId, s.weight, i); if (v) hasAny = true; return v; });
+        weightData[s.weight] = vals;
+      });
+      if (hasAny) updates[exId] = { date: today, weights: weightData };
+    });
+    setHistory((p) => ({ ...p, ...updates }));
+    setReps((p) => { const n={...p}; Object.keys(n).forEach((k) => { if (k.startsWith(`${activeDay}__`)) delete n[k]; }); return n; });
+    setCompletedWeights((p) => { const n={...p}; Object.keys(n).forEach((k) => { if (k.startsWith(`cw${activeDay}__`)) delete n[k]; }); return n; });
+    setSaved(true);
+  };
+
+  // ── Shared exercise mutations ──
+  const updateSharedField = (exId, field, value) =>
+    setShared((p) => { const u=deepClone(p); u[exId][field]=value; return u; });
+
+  const deleteWeightGroup = (exId, weight) =>
+    setShared((p) => { const u=deepClone(p); u[exId].sets=u[exId].sets.filter((s)=>s.weight!==weight); return u; });
+
+  const updateWeightLabel = (exId, oldW, newW) =>
+    setShared((p) => { const u=deepClone(p); u[exId].sets=u[exId].sets.map((s)=>s.weight===oldW?{...s,weight:newW}:s); return u; });
+
+  const addWeightGroup = (exId, weight) => {
+    if (!weight.trim()) return;
+    setShared((p) => { const u=deepClone(p); if (!u[exId].sets.find((s)=>s.weight===weight)) u[exId].sets.push({weight}); return u; });
+  };
+
+  // ── Exercise add/remove from day ──
+  const removeExFromDay = (exId) =>
+    setDays((p) => { const u=deepClone(p); const d=u.find((d)=>d.id===activeDay); d.exerciseIds=d.exerciseIds.filter((id)=>id!==exId); return u; });
+
+  const addExerciseToDay = (exId) => {
+    setDays((p) => { const u=deepClone(p); const d=u.find((d)=>d.id===activeDay); if (!d.exerciseIds.includes(exId)) d.exerciseIds.push(exId); return u; });
+  };
+
+  const createAndAddExercise = () => {
+    if (!newExForm.name.trim()) return;
+    const id = newExForm.name.toLowerCase().replace(/\s+/g,"_") + "_" + Date.now();
+    const newEx = { id, name: newExForm.name.trim(), notes: newExForm.notes.trim(), video: newExForm.video.trim(), sets: newExForm.weight.trim() ? [{ weight: newExForm.weight.trim() }] : [] };
+    setShared((p) => ({ ...p, [id]: newEx }));
+    addExerciseToDay(id);
+    setNewExForm({ name: "", weight: "", notes: "", video: "" });
+    setShowAddEx(false);
+  };
+
+  // ── Progress ──
+  const exProgress = (exId) => {
+    const ex = shared[exId]; if (!ex) return { done:0, total:0 };
+    return { done: (ex.sets||[]).filter((s)=>completedWeights[`cw${activeDay}__${exId}__${s.weight}`]).length, total: (ex.sets||[]).length };
+  };
+  const totalW = day.exerciseIds.reduce((a,id)=>a+exProgress(id).total,0);
+  const doneW  = day.exerciseIds.reduce((a,id)=>a+exProgress(id).done,0);
+  const progress = totalW>0 ? Math.round((doneW/totalW)*100) : 0;
+  const hasAnyReps = Object.entries(reps).some(([k,v])=>k.startsWith(`${activeDay}__`)&&v!=="");
+
+  // All shared exercise ids for "add existing to day" picker
+  const allSharedIds = Object.keys(shared);
+  const dayExIds = day.exerciseIds;
+  const availableToAdd = allSharedIds.filter((id)=>!dayExIds.includes(id));
+
+  return React.createElement("div", { style:{fontFamily:"'DM Mono',monospace",background:"#f5f5f0",minHeight:"100vh",paddingBottom:80} },
+
+    // ── Header ──
+    React.createElement("div", {style:{background:"#111",color:"#fff",padding:"18px 16px 14px",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
+      React.createElement("div", null,
+        React.createElement("div", {style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,letterSpacing:2}}, "UPPER BODY SPLIT"),
+        React.createElement("div", {style:{fontSize:10,color:"#888",marginTop:2,letterSpacing:1}}, "3 DAY PROGRAMME")
+      ),
+      React.createElement("button", {
+        onClick:()=>{ setEditMode((v)=>!v); setEditingEx(null); setShowAddEx(false); },
+        style:{fontSize:10,padding:"5px 10px",borderRadius:5,border:"none",background:editMode?"#f59e0b":"#333",color:editMode?"#111":"#aaa",letterSpacing:1,fontWeight:editMode?600:400}
+      }, editMode?"✓ DONE":"✎ EDIT")
+    ),
+
+    editMode && React.createElement("div", {style:{background:"#fffbeb",borderBottom:"2px solid #f59e0b",padding:"8px 14px",fontSize:10,color:"#92400e",lineHeight:1.6}},
+      "EDIT MODE — Tap exercise name to edit details · manage weights · remove or add exercises"
+    ),
+
+    // ── Day tabs ──
+    React.createElement("div", {style:{display:"flex",background:"#111"}},
+      days.map((d)=>React.createElement("button",{
+        key:d.id, onClick:()=>{setActiveDay(d.id);setSaved(false);},
+        style:{flex:1,padding:"11px 0",border:"none",fontFamily:"'Bebas Neue',sans-serif",fontSize:15,letterSpacing:1.5,background:activeDay===d.id?d.accent:"transparent",color:activeDay===d.id?"#fff":"#666",borderTop:activeDay===d.id?`3px solid ${d.accent}`:"3px solid transparent"}
+      }, d.label))
+    ),
+
+    // ── Progress ──
+    React.createElement("div", {style:{background:"#e8e8e2",height:4}},
+      React.createElement("div", {style:{height:4,width:`${progress}%`,background:day.accent,transition:"width 0.3s ease"}})
+    ),
+    React.createElement("div", {style:{padding:"7px 14px",background:"#fafaf5",borderBottom:"1px solid #e8e8e2",display:"flex",justifyContent:"space-between"}},
+      React.createElement("span", {style:{fontSize:10,color:"#999",letterSpacing:1}}, `${doneW}/${totalW} WEIGHTS DONE`),
+      React.createElement("span", {style:{fontSize:11,fontWeight:500,color:day.accent}}, `${progress}%`)
+    ),
+
+    // ── Exercises ──
+    React.createElement("div", {style:{padding:"12px 12px 0"}},
+
+      ...day.exerciseIds.map((exId) => {
+        const ex = shared[exId]; if (!ex) return null;
+        const lastSession = history[exId];
+        const notesOpen   = expandedNotes[exId];
+        const isEditing   = editingEx === exId;
+        const { done:exDone, total:exTotal } = exProgress(exId);
+        const newWVal = newWeightInputs[exId] || "";
+
+        return React.createElement("div", {key:exId, style:{background:"#fff",borderRadius:8,marginBottom:12,border:editMode?"2px solid #f59e0b":"1px solid #e8e8e2",overflow:"hidden"}},
+
+          // Exercise header
+          React.createElement("div", {style:{padding:"11px 13px 9px",borderBottom:"1px solid #f0f0ea"}},
+            React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+              React.createElement("div", {style:{flex:1}},
+                React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8}},
+                  React.createElement("div", {
+                    style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:16,letterSpacing:1,color:editMode?"#b45309":"#111",cursor:editMode?"pointer":"default",textDecoration:editMode?"underline dotted":"none"},
+                    onClick:()=>{ if(editMode) setEditingEx(isEditing?null:exId); }
+                  }, ex.name + (editMode?" ✎":"")),
+                  !editMode && exDone>0 && React.createElement("span",{style:{fontSize:9,color:exDone===exTotal?day.accent:"#bbb"}},`${exDone}/${exTotal}`)
+                ),
+                React.createElement("div",{style:{fontSize:9,color:day.accent,marginTop:1}}, "⟳ SHARED ACROSS ALL DAYS"),
+                lastSession && !editMode && React.createElement("div",{style:{fontSize:9,color:"#aaa",marginTop:2}}, "Last: ", React.createElement("span",{style:{color:"#666"}},lastSession.date))
+              ),
+              !editMode
+                ? React.createElement("div",{style:{display:"flex",gap:5}},
+                    ex.video && React.createElement("a",{href:ex.video,target:"_blank",rel:"noreferrer",style:{fontSize:9,background:"#e00",color:"#fff",padding:"3px 6px",borderRadius:3,textDecoration:"none"}},"▶ VID"),
+                    ex.notes && React.createElement("button",{onClick:()=>toggleNotes(exId),style:{fontSize:9,background:notesOpen?"#111":"#f0f0ea",color:notesOpen?"#fff":"#555",border:"none",padding:"3px 6px",borderRadius:3}},(notesOpen?"HIDE":"NOTES"))
+                  )
+                : React.createElement("button",{
+                    onClick:()=>{ if(window.confirm(`Remove "${ex.name}" from ${day.label}?\n\nThe exercise stays available to add back later.`)) removeExFromDay(exId); },
+                    style:{fontSize:10,padding:"4px 8px",borderRadius:4,border:"1.5px solid #f87171",background:"#fef2f2",color:"#ef4444",whiteSpace:"nowrap"}
+                  }, "✕ REMOVE")
+            ),
+            notesOpen && ex.notes && !editMode && React.createElement("div",{style:{marginTop:7,fontSize:10,color:"#666",lineHeight:1.6,background:"#fafaf5",padding:"7px 9px",borderRadius:4,borderLeft:`3px solid ${day.accent}`}}, ex.notes)
+          ),
+
+          // ── Inline edit panel ──
+          isEditing && editMode && React.createElement("div",{style:{padding:"10px 13px",background:"#fffbeb",borderBottom:"1px solid #f59e0b"}},
+            React.createElement("div",{style:{fontSize:9,color:"#92400e",marginBottom:8,letterSpacing:1}}, "EDIT EXERCISE DETAILS"),
+            // Name
+            React.createElement("div",{style:{marginBottom:6}},
+              React.createElement("div",{style:{fontSize:9,color:"#aaa",marginBottom:3}}, "NAME"),
+              React.createElement("input",{type:"text",value:ex.name,onChange:(e)=>updateSharedField(exId,"name",e.target.value),style:{width:"100%",fontSize:12,padding:"5px 8px",border:"1.5px solid #f59e0b",background:"#fff",color:"#333"}})
+            ),
+            // Notes
+            React.createElement("div",{style:{marginBottom:6}},
+              React.createElement("div",{style:{fontSize:9,color:"#aaa",marginBottom:3}}, "NOTES / CUES"),
+              React.createElement("textarea",{value:ex.notes||"",onChange:(e)=>updateSharedField(exId,"notes",e.target.value),rows:2,style:{width:"100%",fontSize:11,padding:"5px 8px",border:"1.5px solid #e0e0d8",background:"#fff",color:"#333",resize:"vertical",borderRadius:5,fontFamily:"'DM Mono',monospace"}})
+            ),
+            // Video
+            React.createElement("div",null,
+              React.createElement("div",{style:{fontSize:9,color:"#aaa",marginBottom:3}}, "VIDEO URL"),
+              React.createElement("input",{type:"text",value:ex.video||"",onChange:(e)=>updateSharedField(exId,"video",e.target.value),placeholder:"https://gbr01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fyoutube.com%2F...%2522%2Cstyle&data=05%7C02%7Cbenjamin.parker1%40homeoffice.gov.uk%7Ccf06a50309ab4a4ac4c208dec465ab64%7Cf24d93ecb2914192a08af182245945c2%7C0%7C0%7C639164138114212815%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=JDcNMhkEP0hqQlk8A49O358tjEktwBfYkTLnNCFHJHE%3D&reserved=0:{width:"100%",fontSize:11,padding:"5px 8px",border:"1.5px solid #e0e0d8",background:"#fff",color:"#333"}})
+            )
+          ),
+
+          // ── Weight rows ──
+          ...(ex.sets||[]).map((set,si) => {
+            const cwKey = `cw${activeDay}__${exId}__${set.weight}`;
+            const done  = completedWeights[cwKey];
+            const lastVals  = lastSession?.weights?.[set.weight]||[];
+            const todayVals = Array.from({length:NUM_SETS},(_,i)=>getRep(activeDay,exId,set.weight,i));
+            const todayTotal = todayVals.reduce((a,v)=>a+(parseInt(v)||0),0);
+            const lastTotal  = lastVals.reduce((a,v)=>a+(parseInt(v)||0),0);
+            const anyFilled  = todayVals.some((v)=>v!=="");
+            const cmp = anyFilled&&lastTotal>0 ? (todayTotal>lastTotal?"up":todayTotal===lastTotal?"same":"down") : null;
+
+            return React.createElement("div",{key:set.weight+si,className:"wrow",style:{padding:"9px 12px 11px",borderBottom:si<(ex.sets.length-1)?"1px solid #f5f5f0":"none",background:editMode?(si%2===0?"#fffdf5":"#fff"):done?day.color:"transparent"}},
+              editMode
+                ? React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                    React.createElement("input",{type:"text",value:set.weight,onChange:(e)=>updateWeightLabel(exId,set.weight,e.target.value),style:{flex:1,maxWidth:160,fontSize:12,padding:"4px 8px",border:"1.5px solid #f59e0b",background:"#fffbeb",color:"#333"}}),
+                    React.createElement("button",{onClick:()=>deleteWeightGroup(exId,set.weight),style:{width:24,height:24,borderRadius:4,border:"1.5px solid #f87171",background:"#fef2f2",color:"#ef4444",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",padding:0}},"✕")
+                  )
+                : React.createElement("div",null,
+                    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+                      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                        React.createElement("span",{style:{fontSize:13,fontWeight:500,color:done?"#aaa":"#222",textDecoration:done?"line-through":"none"}},set.weight),
+                        cmp==="up"   && React.createElement("span",{style:{fontSize:12,color:"#22c55e"}},"↑"),
+                        cmp==="same" && React.createElement("span",{style:{fontSize:12,color:"#f59e0b"}},"→"),
+                        cmp==="down" && React.createElement("span",{style:{fontSize:12,color:"#f87171"}},"↓")
+                      ),
+                      React.createElement("button",{onClick:()=>toggleWeight(cwKey),style:{width:22,height:22,borderRadius:4,border:`2px solid ${done?day.accent:"#ddd"}`,background:done?day.accent:"transparent",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",padding:0}},done?"✓":"")
+                    ),
+                    React.createElement("div",{style:{display:"flex",gap:4,marginBottom:6,alignItems:"center"}},
+                      ...Array.from({length:NUM_SETS},(_,i)=>React.createElement("div",{key:i,style:{width:36,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#999",background:"#f0f0ea",borderRadius:4}},lastVals[i]||"·")),
+                      React.createElement("span",{style:{fontSize:9,color:"#ccc",marginLeft:2}},"LAST")
+                    ),
+                    React.createElement("div",{style:{display:"flex",gap:4,alignItems:"center"}},
+                      ...Array.from({length:NUM_SETS},(_,i)=>{
+                        const inputId=`${activeDay}__${exId}__${set.weight}__${i}`;
+                        const val=todayVals[i]; const lastV=lastVals[i]||"";
+                        const improved=val!==""&&lastV!==""&&parseInt(val)>parseInt(lastV);
+                        const dropped=val!==""&&lastV!==""&&parseInt(val)<parseInt(lastV);
+                        const idxInAll=allInputIds.indexOf(inputId);
+                        const nextId=idxInAll<allInputIds.length-1?allInputIds[idxInAll+1]:null;
+                        return React.createElement("input",{key:inputId,ref:(el)=>{inputRefs.current[inputId]=el;},type:"text",inputMode:"numeric",maxLength:2,value:val,
+                          className:`repbox${improved?" improved":dropped?" dropped":val?" filled":""}`,
+                          onChange:(e)=>handleChange(inputId,e.target.value,nextId),
+                          onKeyDown:(e)=>handleKeyDown(e,inputId)});
+                      }),
+                      React.createElement("span",{style:{fontSize:9,color:"#aaa",marginLeft:2}},"TODAY")
+                    )
+                  )
+            );
+          }),
+
+          // Add weight (edit mode)
+          editMode && React.createElement("div",{style:{padding:"8px 12px",borderTop:"1px dashed #f59e0b",background:"#fffdf5",display:"flex",gap:6}},
+            React.createElement("input",{type:"text",value:newWVal,onChange:(e)=>setNewWeightInputs((p)=>({...p,[exId]:e.target.value})),placeholder:"e.g. 45kg",style:{width:100,fontSize:11,padding:"4px 7px",border:"1.5px dashed #f59e0b",background:"#fff",color:"#333"}}),
+            React.createElement("button",{onClick:()=>{addWeightGroup(exId,newWVal);setNewWeightInputs((p)=>({...p,[exId]:""}));},style:{fontSize:11,padding:"4px 10px",borderRadius:4,border:"1.5px solid #f59e0b",background:"#f59e0b",color:"#111"}},"+ADD")
+          )
+        );
+      }),
+
+      // ── Edit mode: add existing exercise or create new ──
+      editMode && React.createElement("div",{style:{background:"#fff",borderRadius:8,marginBottom:12,border:"2px dashed #f59e0b",overflow:"hidden"}},
+        React.createElement("div",{style:{padding:"10px 13px",borderBottom:"1px dashed #f59e0b",background:"#fffbeb"}},
+          React.createElement("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:14,letterSpacing:1,color:"#b45309"}}, `+ ADD EXERCISE TO ${day.label}`)
+        ),
+        React.createElement("div",{style:{padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}},
+
+          // Add existing exercise (already created, just not on this day)
+          availableToAdd.length > 0 && React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:9,color:"#aaa",marginBottom:5,letterSpacing:1}}, "ADD EXISTING EXERCISE"),
+            ...availableToAdd.map((id)=>
+              React.createElement("button",{key:id,onClick:()=>addExerciseToDay(id),style:{display:"block",width:"100%",textAlign:"left",padding:"7px 10px",marginBottom:4,borderRadius:4,border:"1px solid #e0e0d8",background:"#fafaf8",color:"#333",fontSize:12}},
+                "+ " + shared[id]?.name
+              )
+            )
+          ),
+
+          // Create brand new exercise
+          React.createElement("div",{style:{borderTop:availableToAdd.length>0?"1px solid #f0f0ea":"none",paddingTop:availableToAdd.length>0?8:0}},
+            React.createElement("button",{onClick:()=>setShowAddEx((v)=>!v),style:{fontSize:10,padding:"5px 10px",borderRadius:4,border:"1.5px solid #b45309",background:showAddEx?"#b45309":"transparent",color:showAddEx?"#fff":"#b45309",marginBottom:showAddEx?8:0}},
+              showAddEx?"▲ CANCEL":"▼ CREATE NEW EXERCISE"
+            ),
+            showAddEx && React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+              React.createElement("input",{type:"text",value:newExForm.name,onChange:(e)=>setNewExForm((p)=>({...p,name:e.target.value})),placeholder:"Exercise name",style:{width:"100%",fontSize:12,padding:"6px 8px",border:"1.5px solid #f59e0b",borderRadius:4,background:"#fffbeb",color:"#333"}}),
+              React.createElement("input",{type:"text",value:newExForm.weight,onChange:(e)=>setNewExForm((p)=>({...p,weight:e.target.value})),placeholder:"First weight e.g. 40kg",style:{width:"100%",fontSize:12,padding:"6px 8px",border:"1.5px solid #e0e0d8",borderRadius:4,background:"#fff",color:"#333"}}),
+              React.createElement("textarea",{value:newExForm.notes,onChange:(e)=>setNewExForm((p)=>({...p,notes:e.target.value})),placeholder:"Notes / cues (optional)",rows:2,style:{width:"100%",fontSize:11,padding:"6px 8px",border:"1.5px solid #e0e0d8",borderRadius:4,background:"#fff",color:"#333",resize:"vertical",fontFamily:"'DM Mono',monospace"}}),
+              React.createElement("input",{type:"text",value:newExForm.video,onChange:(e)=>setNewExForm((p)=>({...p,video:e.target.value})),placeholder:"Video URL (optional)",style:{width:"100%",fontSize:11,padding:"6px 8px",border:"1.5px solid #e0e0d8",borderRadius:4,background:"#fff",color:"#333"}}),
+              React.createElement("button",{onClick:createAndAddExercise,style:{padding:"7px",borderRadius:5,border:"none",background:newExForm.name.trim()?"#f59e0b":"#e8e8e2",color:newExForm.name.trim()?"#111":"#aaa",fontFamily:"'Bebas Neue',sans-serif",fontSize:15,letterSpacing:1.5}}, "CREATE & ADD")
+            )
+          )
+        )
+      )
+    ),
+
+    // ── Save ──
+    !editMode && hasAnyReps && !saved && React.createElement("div",{style:{padding:"0 12px 16px"}},
+      React.createElement("button",{onClick:saveSession,style:{width:"100%",padding:"13px",background:day.accent,color:"#fff",border:"none",borderRadius:8,fontFamily:"'Bebas Neue',sans-serif",fontSize:17,letterSpacing:2}}, "SAVE SESSION — CLEARS FOR NEXT TIME")
+    ),
+    !editMode && saved && React.createElement("div",{style:{padding:"0 12px 16px"}},
+      React.createElement("div",{style:{textAlign:"center",padding:"12px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,fontSize:12,color:"#16a34a",letterSpacing:1}}, "✓ SESSION SAVED")
+    ),
+    !editMode && React.createElement("div",{style:{padding:"0 16px 20px",fontSize:9,color:"#ccc",textAlign:"center",letterSpacing:0.8}}, "SINGLE DIGIT AUTO-ADVANCES · DOUBLE DIGIT STAYS · BACKSPACE GOES BACK")
+  );
+}
+
+ReactDOM.render(React.createElement(GymTracker), document.getElementById("root")); </script> </body> </html>
